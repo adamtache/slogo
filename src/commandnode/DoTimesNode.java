@@ -24,8 +24,8 @@ public class DoTimesNode extends BinaryVariableNode {
     	childListCheck(COMMAND_LIST_INDEX);
     	ListNode controlList = ((ListNode) (getChildren().get(CONTROL_LIST_INDEX)));
         SLogoVariable var = getWorkspace().createVariable(controlList
-                                          .getInnerCommands().get(0), 1);
-        double limit = Double.parseDouble(controlList.getInnerCommands().get(1));
+                                          .getInnerTokens().get(0), 1);
+        double limit = Double.parseDouble(controlList.getInnerTokens().get(1));
         ListNode commandList = ((ListNode) (getChildren().get(COMMAND_LIST_INDEX)));
         double evaluation = 0;
         for (int x = 1; x <= limit; x++){

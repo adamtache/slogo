@@ -1,7 +1,6 @@
 package commandnode;
 
 import exception.SLogoException;
-import model.ResourceLoader;
 import model.SLogoCharacterState;
 import model.SLogoVariable;
 
@@ -28,21 +27,15 @@ public class ForNode extends BinaryVariableNode {
 		childListCheck(CONTROL_LIST_INDEX);
 		childListCheck(COMMAND_LIST_INDEX);
 		ListNode controlList = ((ListNode) (getChildren().get(CONTROL_LIST_INDEX)));
-		Node startNode = controlList.getInnerRoots().get(START_INDEX);
-		Node endNode = controlList.getInnerRoots().get(END_INDEX);
-		Node incrementNode = controlList.getInnerRoots().get(INCREMENT_INDEX);
-		if(!(startNode instanceof NumericNode) || !(endNode instanceof NumericNode) || !(incrementNode instanceof NumericNode)){
-			throw new SLogoException(new ResourceLoader().getString("NumericError"));
-		}
-		int start = (int) Math.floor(startNode.evaluate(state));
-		int end = (int) Math.floor(endNode.evaluate(state));
-		int increment = (int) Math.floor(incrementNode.evaluate(state));
-		SLogoVariable var = getWorkspace().createVariable(controlList.getInnerCommands().get(VARIABLE_INDEX), start);
+		int start = (int) Math.floor(controlList.getEvaluations().get(START_INDEX));
+		int end = (int) Math.floor(controlList.getEvaluations().get(END_INDEX));
+		int increment = (int) Math.floor(controlList.getEvaluations().get(INCREMENT_INDEX));
+		SLogoVariable var = getWorkspace().createVariable(controlList.getInnerTokens().get(VARIABLE_INDEX), start);
 		ListNode commandList = ((ListNode) (getChildren().get(COMMAND_LIST_INDEX)));
 		double evaluation = 0;
 		for(int x = start; x <= end; x += increment){
 			evaluation = commandList.evaluate(state);
-			var.setValue(x);
+			getWorkspace().setVarValue(var.getName(), x);
 		}
 		return evaluation;
 	}

@@ -10,6 +10,7 @@ public class MakeUserInstructionNode extends TernaryVariableNode{
     private static final int COMMAND_LIST_INDEX = 2;
     
     public double evaluate(SLogoCharacterState state) throws SLogoException {
+    	System.out.println(getChildren());
     	childListCheck(VARIABLE_LIST_INDEX);
     	childListCheck(COMMAND_LIST_INDEX);
     	String commandName = (((CustomCommandNode) getChildren().get(COMMAND_NAME_INDEX)).getName());

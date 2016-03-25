@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import commandnode.Node;
+import controller.CommandController;
 import exception.SLogoException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import parser.SLogoParser;
+import parser.TreeFactory;
 import view.View;
 
 /**
@@ -61,9 +63,9 @@ public class SLogoModel implements Model {
      */
     @Override
     public void readCommand(String command) throws SLogoException {
-        SLogoParser parser = new SLogoParser(myCurrentWorkspace);
-        List<Node> myCommandRoots = parser.readCommand(command);
-        myCurrentWorkspace.getRootEvaluator().evaluateRoots(myCommandRoots);
+        CommandController myCommandController = new CommandController(myCurrentWorkspace);
+        List<String> tokens = myCommandController.getCommandTokens(command);
+        myCommandController.evaluateTokens(tokens);
     }
 
     /**

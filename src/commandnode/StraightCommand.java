@@ -24,11 +24,11 @@ public abstract class StraightCommand extends UnaryNode{
 		double[] result = new double[NUM_DOUBLES];
 		
 		if(getChild(0) instanceof ParenthesisNode){
-			List<Node> innerRoots = ((ListNode) getChild(0)).getInnerRoots();
-			for(int x=0; x<innerRoots.size(); x++){
-				double innerChildEvaluation = ((ListNode) getChild(0)).evaluateInnerChild(x, state);
-				result[0] += Math.sin(Math.toRadians(direction)) * innerChildEvaluation;
-				result[1] += Math.cos(Math.toRadians(direction)) * innerChildEvaluation;
+			List<Double> listEvaluations = ((ListNode) getChild(0)).getEvaluations();
+			for(int x=0; x<listEvaluations.size(); x++){
+				double evaluation = listEvaluations.get(x);
+				result[0] += Math.sin(Math.toRadians(direction)) * evaluation;
+				result[1] += Math.cos(Math.toRadians(direction)) * evaluation;
 			}
 		}
 		else{

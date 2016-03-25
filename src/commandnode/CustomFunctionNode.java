@@ -30,10 +30,11 @@ public class CustomFunctionNode extends VariableCommand {
         for (String var : customVariables) {
             myCustomVariables.add(new VariableNode(var));
         }
-        ListNode customVars = new BracketNode(getWorkspace());
+        ListNode customVars = new BracketNode();
         customVars.setInnerCommands(customVariables);
         getWorkspace().createCustomCommand(myCommand.getName(), customVars, 
                                            myCommand.getMyCommands());
         return myCommand.getMyCommands().evaluate(state);
     }
+    
 }

@@ -2,116 +2,166 @@ package parser;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import commandnode.BracketNode;
+import commandnode.CommandNode;
 import commandnode.CustomCommandNode;
 import commandnode.CustomFunctionNode;
 import commandnode.ListNode;
+import commandnode.MakeUserInstructionNode;
 import commandnode.Node;
 import commandnode.NumericNode;
 import commandnode.ParenthesisNode;
-import commandnode.TurtleCommand;
-import commandnode.VariableCommand;
 import exception.SLogoException;
 import model.LanguageLoader;
 import model.ResourceLoader;
 import model.SLogoWorkspace;
 import commandnode.VariableNode;
+import commandnode.WorkspaceNode;
 
 /**
- * SLogo's Tree Factory creates abstract syntax trees of Nodes for evaluation of commands
- * 
+ * SLogo's TreeFactory creates a root Node with children representing a complete tree for evaluation of a command
  * @author Adam Tache
- *
  */
 public class TreeFactory {
 
 	private ResourceLoader myResourceLoader;
 	private LanguageLoader myLanguageLoader;
 	private SLogoWorkspace myWorkspace;
+	private String INVALID_TOKENS_ERROR;
+	private String COMMAND_PATH;
+	private String CLASS_EXTENSION;
+	private String COMMAND;
+	private String NOT_IMPLEMENTED_ERROR;
 
 	public TreeFactory (SLogoWorkspace myWorkspace) throws SLogoException {
 		this.myWorkspace = myWorkspace;
 		myResourceLoader = new ResourceLoader();
 		myLanguageLoader = new LanguageLoader();
 		myLanguageLoader.load(myWorkspace.getView().getLanguage());
+		initResources();
 	}
 
 	/**
-	 * Creates tree structures as List<Node> of roots for evaluation
+	 * Initializes resources used throughout class
+	 */
+	private void initResources(){
+		INVALID_TOKENS_ERROR = myResourceLoader.getString("InvalidCommandTokens");
+		COMMAND_PATH = myResourceLoader.getString("CommandNode");
+		CLASS_EXTENSION = getResourceLoader().getString("Node");
+		COMMAND = getResourceLoader().getString("COMMAND");
+		NOT_IMPLEMENTED_ERROR = getResourceLoader().getString("IMPLEMENTED");
+	}
+
+	/**
+	 * @return Root created from tokens
 	 * Uses createRoot helper method to create correct type of root
-	 * 
-	 * @param List<String> commandParts - 
-	 * a list of formated input parsed and ready to be used for creation of Nodes
+	 * @param List<String> tokens - command tokens formatted by SLogoParser
 	 */
-	public List<Node> createRoots(List<String> commandParts) throws SLogoException {
-		List<Node> myRoots = new ArrayList<>();
-		while (!commandParts.isEmpty()) {
-			String myRootToken = commandParts.remove(0);
-			Node myRoot = createRoot(myRootToken);
-			if (isToCommand(myRootToken)) {
-				String customName = commandParts.remove(0);
-				myRoot.addChild(new CustomCommandNode(customName, myWorkspace));
-			}
-			while (myRoot.numCurrentChildren() != myRoot.numRequiredChildren()) {
-				Node nextChild = createChild(commandParts);
-				if(nextChild == null){
-					throw new SLogoException(getResourceLoader().getString("InvalidCommandTokens"));
-				}
-				myRoot.addChild(nextChild);
-			}
-			myRoots.add(myRoot);
+	public Node createRoot(List<String> tokens) throws SLogoException {
+		Node myRoot = createNode(tokens.remove(0));
+		createChildren(myRoot, tokens);
+		return myRoot;
+	}
+
+	/** @param Node node
+	 * 	Initializes Workspace properties in WorkspaceNode when node is a WorkspaceNode
+	 */
+	private void initialize(Node node) throws SLogoException{
+		if(node instanceof WorkspaceNode){
+			((WorkspaceNode)node).initialize(myWorkspace);
 		}
-		return myRoots;
 	}
 
 	/**
-	 * Create children of an already process Node
-	 * 
-	 * @param List<String> commandParts - a list of formated
-	 * input parsed and ready to be used for creation of Nodes
+	 * Creates Node from specific token using Reflection, calling the corresponding class name + "Node"
+	 * @param String strNode - create the necessary node from the string passed
 	 */
-	private Node createChild(List<String> commandParts) throws SLogoException {
-		if (commandParts.isEmpty()) {
+	private Node createNode(String rootToken) throws SLogoException {
+		Node node;
+		String rootName = myLanguageLoader.getTranslation(rootToken.toLowerCase());
+		if (isNumeric(rootToken)) {
+			node = new NumericNode(Double.parseDouble(rootToken));
+		} else if (isVariable(rootName)) {
+			node = new NumericNode(0);
+		} else if (isCustom(rootToken)) {
+			node = new CustomFunctionNode((myWorkspace.getCustomCommand(rootName)));
+		} else {
+			try {
+				node = (Node) Class.forName(COMMAND_PATH + rootName + CLASS_EXTENSION).newInstance();
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+				throw new SLogoException(COMMAND + rootName + NOT_IMPLEMENTED_ERROR);
+			}
+		}
+		initialize(node);
+		return node;
+	}
+
+	/**
+	 * @param Node myRoot
+	 * Create children for myRoot until its current children matches its required children 
+	 * @param List<String> tokens - a list of formated command parts
+	 */
+	private void createChildren(Node myRoot, List<String> tokens) throws SLogoException{
+		while (myRoot.numCurrentChildren() != myRoot.numRequiredChildren()) {
+			Node nextChild = createNextChild(myRoot, tokens);
+			if(nextChild == null){
+				throw new SLogoException(INVALID_TOKENS_ERROR);
+			}
+			myRoot.addChild(nextChild);
+		}
+	}
+	
+	/**
+	 * Create next child in list of tokens
+	 * @param List<String> tokens - a list of formated command parts
+	 */
+	private Node createNextChild(Node myRoot, List<String> tokens) throws SLogoException {
+		if (tokens.isEmpty()) {
 			return null;
 		}
-		String myChildToken = commandParts.remove(0);
-		if (isOpenBracket(myChildToken) || isOpenParenthesis(myChildToken)) {
-			List<String> innerCommands = createCommandList(commandParts);
-			if (isOpenBracket(myChildToken)){
-				ListNode listNode = new BracketNode(myWorkspace);
-				listNode.setInnerCommands(innerCommands);
-				return listNode;
-			}
-			else if(isOpenParenthesis(myChildToken)){
-				ListNode listNode = new ParenthesisNode(myWorkspace);
-				listNode.setInnerCommands(innerCommands);
-				return listNode;
-			}
+		Node child = null;
+		String nextToken = tokens.remove(0);
+		if (myRoot instanceof MakeUserInstructionNode && ((CommandNode)myRoot).numCurrentChildren() == 0) {
+			child = new CustomCommandNode(nextToken);
 		}
-		if (isVariable(myChildToken)) {
-			VariableNode myVar = new VariableNode(myChildToken);
-			myVar.setWorkspace(myWorkspace);
-			return myVar;
-		} else {
-			Node myChild = createRoot(myChildToken);
-			while (myChild.numCurrentChildren() != myChild.numRequiredChildren()) {
-				myChild.addChild(createChild(commandParts));
-			}
-			return myChild;
+		else if (isOpenBracket(nextToken) || isOpenParenthesis(nextToken)) {
+			child = createListNode(nextToken, tokens);
 		}
+		else if (isVariable(nextToken)) {
+			child = new VariableNode(nextToken);
+		} 
+		else {
+			child = createNode(nextToken);
+			createChildren(child, tokens);
+		}
+		initialize(child);
+		return child;
+	}
+	
+	/**
+	 * @param String token - token deemed to match open list element by createNextChild method, so a ( or [
+	 * @param List<String> tokens - a list of formated command parts
+	 */
+	private ListNode createListNode(String token, List<String> tokens) throws SLogoException{
+		ListNode child = null;
+		if (isOpenBracket(token)){
+			child = new BracketNode();
+		}
+		else if(isOpenParenthesis(token)){
+			child = new ParenthesisNode();
+		}
+		((ListNode) child).setInnerCommands(createInnerListTokens(tokens));
+		return child;
 	}
 
-
 	/**
-	 * Create necessary tree processing when user inputs a list contained 
-	 * within brackets
+	 * Creates list of inner tokens for ListNode representing tokens between outermost enclosures
+	 * i.e. [ returns tokens inside ]
+	 * Inner tokens can be list tokens themselves 
 	 * 
-	 * @param List<String> commandParts - a list of formated input parsed 
-	 * and ready to be used for creation of Nodes
+	 * @param List<String> tokens
 	 */
-	private List<String> createCommandList(List<String> commandParts) 
-			throws SLogoException {
+	private List<String> createInnerListTokens(List<String> commandParts) throws SLogoException {
 		List<String> innerCommands = new ArrayList<>();
 		int openBrackets = 1;
 		int closedBrackets = 0;
@@ -129,39 +179,6 @@ public class TreeFactory {
 			}
 		}
 		return innerCommands;
-	}
-	/**
-	 * Creates root by looking at 
-	 * 
-	 * @param String strNode - create the necessary node from the string passed
-	 */
-	private Node createRoot(String rootToken) throws SLogoException {
-		Node node;
-		String rootName = myLanguageLoader.getTranslation(rootToken.toLowerCase());
-		if (isNumeric(rootToken)) {
-			return new NumericNode(Double.parseDouble(rootToken));
-		} else if (isVariable(rootName)) {
-			return new NumericNode(0);
-		} else if (isCustom(rootToken)) {
-			CustomFunctionNode function = new CustomFunctionNode((myWorkspace.lookupCustomCommand(rootName)));
-			function.setWorkspace(myWorkspace);
-			return function;
-		} else {
-			try {
-				node = (Node) Class.forName(getResourceLoader().getString("CommandNode") 
-						+ rootName + getResourceLoader().getString("Node")).newInstance();
-			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-				throw new SLogoException(getResourceLoader().getString("Command") 
-						+ rootName + getResourceLoader().getString("Implemented"));
-			}
-		}
-		if (node instanceof VariableCommand) {
-			((VariableCommand)node).setWorkspace(myWorkspace);
-		}
-		if (node instanceof TurtleCommand) {
-			((TurtleCommand)node).setWorkspace(myWorkspace);
-		}
-		return node;
 	}
 
 	/**
@@ -224,11 +241,7 @@ public class TreeFactory {
 	 * @param String str - string to be compared
 	 */
 	private boolean isCustom(String str){
-		return myWorkspace.lookupCustomCommand(str) != null;
-	}
-
-	private boolean isToCommand(String command){
-		return myLanguageLoader.getTranslation(command.toLowerCase()).equals(new ResourceLoader().getString("MakeUserInstruction"));
+		return myWorkspace.getCustomCommand(str) != null;
 	}
 
 	/**

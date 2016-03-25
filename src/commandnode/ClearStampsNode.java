@@ -3,15 +3,7 @@ package commandnode;
 import exception.SLogoException;
 import model.SLogoCharacterState;
 
-public class ClearStampsNode extends TurtleCommand{
-
-    /**
-     * Sets number of children to zero
-     * 
-     */
-	public ClearStampsNode() {
-		setNumChildren(0);
-	}
+public class ClearStampsNode extends StampingNode{
 
     /**
      * Clears a stamp using clearStampTurtles method in TurtleCommand, called from StampingNode

@@ -1,16 +1,14 @@
 package commandnode;
 
 import model.SLogoCharacterState;
-import model.SLogoWorkspace;
 
 /**
  * Node representation of Variable command
  */
-public class VariableNode extends NullaryNode{
+public class VariableNode extends WorkspaceNode{
 
-    private String myName;
-    private SLogoWorkspace myWorkspace;
-
+	private String myName;
+    
     public VariableNode(String myName){
         this.myName = myName;
     }
@@ -20,18 +18,10 @@ public class VariableNode extends NullaryNode{
     }
 
     /**
-     * return current value of variable in current workspace
+     * Returns current value of variable in relevant workspace
      */
     public double evaluate(SLogoCharacterState state){
-        return myWorkspace.getVarValueByName(myName);
-    }
-
-    public SLogoWorkspace getWorkspace(){
-        return myWorkspace;
-    }
-
-    public void setWorkspace(SLogoWorkspace myWorkspace){
-        this.myWorkspace = myWorkspace;
+        return getWorkspace().getVarValueByName(myName);
     }
 
 }

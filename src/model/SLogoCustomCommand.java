@@ -51,7 +51,7 @@ public class SLogoCustomCommand{
      */
     public List<String> getVariableNames(){
         List<String> varNames = new ArrayList<>();
-        myVariables.getInnerCommands().stream()
+        myVariables.getInnerTokens().stream()
                                       .forEach(var -> varNames.add(var.toString()));
         return varNames;
     }

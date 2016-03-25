@@ -2,15 +2,12 @@ package commandnode;
 
 import exception.SLogoException;
 import model.SLogoCharacterState;
-import model.SLogoWorkspace;
 
-public class CustomCommandNode extends CommandNode{
+public class CustomCommandNode extends WorkspaceNode{
 
     private String myName;
-    private SLogoWorkspace myWorkspace;
 
-    public CustomCommandNode(String myName, SLogoWorkspace myWorkspace){
-        this.myWorkspace = myWorkspace;
+    public CustomCommandNode(String myName){
         this.myName = myName;
     }
 
@@ -23,15 +20,7 @@ public class CustomCommandNode extends CommandNode{
      * @throws SLogoException 
      */
     public double evaluate(SLogoCharacterState state) throws SLogoException{
-        return myWorkspace.lookupCustomCommand(myName) == null ? 0 : 1; 
-    }
-
-    public SLogoWorkspace getWorkspace(){
-        return myWorkspace;
-    }
-
-    public void setWorkspace(SLogoWorkspace myWorkspace){
-        this.myWorkspace = myWorkspace;
+        return getWorkspace().getCustomCommand(myName) == null ? 0 : 1; 
     }
 
 }

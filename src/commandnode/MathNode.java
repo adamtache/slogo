@@ -19,9 +19,9 @@ public abstract class MathNode extends BinaryNode{
 
 		for(int i=0; i<=1; i++){
 			if(getChild(i) instanceof ParenthesisNode){
-				List<Node> innerRoots = ((ListNode) getChild(i)).getInnerRoots();
-				for(int x=0; x<innerRoots.size(); x++){
-					double innerChildEvaluation = ((ListNode) getChild(i)).evaluateInnerChild(x, state);
+				List<Double> listEvaluations = ((ListNode) getChild(i)).getEvaluations();
+				for(int x=0; x<listEvaluations.size(); x++){
+					double innerChildEvaluation = listEvaluations.get(x);
 					if(i==0){
 						if(x==0){
 							if(opcode == SUM_OPCODE || opcode == DIFFERENCE_OPCODE)

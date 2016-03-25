@@ -7,7 +7,8 @@ import exception.SLogoException;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import parser.RootEvaluator;
+import parser.TreeEvaluator;
+import parser.TreeFactory;
 import view.SLogoPropertiesData;
 import view.View;
 
@@ -18,8 +19,7 @@ import view.View;
 public class SLogoWorkspace {
 
 	private View myView;
-	private SLogoTurtleFactory turtleFactory;
-	private RootEvaluator myRootEvaluator;
+	private SLogoTurtleFactory myTurtleFactory;
 	private List<SLogoCharacter> myCharacters;
 	private List<SLogoCharacter> myActiveTurtles;
 	private ObservableList<SLogoDisplayData> myObservableDataList;
@@ -36,8 +36,8 @@ public class SLogoWorkspace {
 	public SLogoWorkspace(View view) throws SLogoException {
 		myView = view;
 		createObservableLists();
-		turtleFactory = new SLogoTurtleFactory(this);
 		myCharacters = new ArrayList<>();
+		myTurtleFactory = new SLogoTurtleFactory(this);
 		myPropertiesData = myView.getCurrentVisualizer().getPropertiesData();
 	}
 
@@ -47,10 +47,9 @@ public class SLogoWorkspace {
 	 * @throws SLogoException
 	 */
 	public void initialize() throws SLogoException {
-		myRootEvaluator = new RootEvaluator(this);
 		myActiveTurtles = new ArrayList<>();
 		resetActiveTurtles();
-		myActiveTurtles.add(turtleFactory.createDefaultTurtle());
+		myActiveTurtles.add(myTurtleFactory.createDefaultTurtle());
 	}
 
 	/**
@@ -105,7 +104,7 @@ public class SLogoWorkspace {
 		}
 		myObservableCustomList.add(
 				new SLogoCustomCommand(commandName, varList, commandList));
-		return lookupCustomCommand(commandName);
+		return getCustomCommand(commandName);
 	}
 
 	/**
@@ -121,6 +120,14 @@ public class SLogoWorkspace {
 			}
 		}
 		return 0;
+	}
+	
+	public void setVarValue(String varName, double value){
+		for(SLogoVariable var : myObservableVariableList){
+			if(var.getName().equals(varName)) {
+				var.setValue(value);
+			}
+		}
 	}
 
 	/**
@@ -144,7 +151,7 @@ public class SLogoWorkspace {
 	 * @param varName
 	 * @return
 	 */
-	public SLogoCustomCommand lookupCustomCommand(String varName){
+	public SLogoCustomCommand getCustomCommand(String varName){
 		for(SLogoCustomCommand custom : myObservableCustomList){
 			if(custom.getName().equals(varName)) {
 				return custom;
@@ -198,8 +205,8 @@ public class SLogoWorkspace {
 	 * 
 	 * @return
 	 */
-	public SLogoTurtleFactory getCurrentTurtleFactory() {
-		return turtleFactory;
+	public SLogoTurtleFactory getTurtleFactory() {
+		return myTurtleFactory;
 	}
 
 	/**
@@ -245,8 +252,8 @@ public class SLogoWorkspace {
 	/**
 	 * @return the myRootEvaluator
 	 */
-	public RootEvaluator getRootEvaluator() {
-		return myRootEvaluator;
+	public TreeEvaluator getTreeEvaluator() {
+		return new TreeEvaluator(this);
 	}
 
 	/**
